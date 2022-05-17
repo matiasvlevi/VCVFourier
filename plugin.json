@@ -1,0 +1,23 @@
+{
+  "slug": "VCVFG",
+  "name": "VCVFG",
+  "version": "2.0.0",
+  "license": "MIT",
+  "brand": "vlev",
+  "author": "vlev",
+  "authorEmail": "matiasvlevi@gmail.com",
+  "authorUrl": "https://github.com/matiasvlevi",
+  "pluginUrl": "",
+  "manualUrl": "",
+  "sourceUrl": "",
+  "donateUrl": "",
+  "changelogUrl": "",
+  "modules": [
+    {
+      "slug": "FourierGenerator",
+      "name": "FourierGenerator",
+      "description": "Generate complex fourier curves",
+      "tags": []
+    }
+  ]
+}

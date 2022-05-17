@@ -1,0 +1,1 @@
+g++ eval/eval.cpp eval.cpp -o eval.exe
