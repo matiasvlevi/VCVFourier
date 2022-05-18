@@ -4,6 +4,3 @@
 /plugin.dylib
 /plugin.dll
 .DS_Store
-/eval
-eval.exe
-eval.cpp

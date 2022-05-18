@@ -2,28 +2,31 @@
 
 namespace Utils
 {
-  std::vector<float> split(std::string const &original, char separator)
+  std::vector<float> split(std::string const &str, char delim)
   {
     float val = 0.f;
-    std::vector<float> results;
-    std::string::const_iterator start = original.begin();
-    std::string::const_iterator end = original.end();
-    std::string::const_iterator next = std::find(start, end, separator);
+    std::vector<float> ans;
+    std::string::const_iterator start = str.begin();
+    std::string::const_iterator end = str.end();
+    std::string::const_iterator next = std::find(start, end, delim);
+
+    if (str.length() == 0)
+      return {};
 
     while (next != end)
     {
       if (tryParse(std::string(start, next), val))
       {
-        results.push_back(val);
+        ans.push_back(val);
       }
       start = next + 1;
-      next = std::find(start, end, separator);
+      next = std::find(start, end, delim);
     }
     if (tryParse(std::string(start, next), val))
     {
-      results.push_back(val);
+      ans.push_back(val);
     }
-    return results;
+    return ans;
   }
 
   bool tryParse(std::string expression, float &v)
@@ -49,4 +52,5 @@ namespace Utils
     }
     return result;
   }
+
 }

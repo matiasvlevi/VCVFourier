@@ -1,21 +1,25 @@
 #include "utils.hpp"
 
-#define TWO_PI 2.f * M_PI
-
-typedef float (*trigFunc)(float);
-
 struct FourierGenerator : Module
 {
-  bool dirty = false;
+  bool dirtyTextFrequencies = true;
+  bool dirtyTextAmplitudes = true;
+
   float phase = 0.f;
   float sum = 0.f;
+
   trigFunc trig = &std::sin;
-  std::string content;
-  std::vector<float> data;
+
+  std::string frequenciesText;
+  std::string amplitudesText;
+
+  std::vector<float> frequencies;
+  std::vector<float> amplitudes;
+
   enum ParamId
   {
     WAVE_TYPE,
-    AMPLITUDE,
+    MASTER_AMPLITUDE,
     PARAMS_LEN
   };
   enum InputId
@@ -35,52 +39,112 @@ struct FourierGenerator : Module
   FourierGenerator()
   {
     config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
-    configParam(AMPLITUDE, 1.f, 4.f, 1.f, "Amplitude", " V");
-    configParam(WAVE_TYPE, 0.f, 1.f, 1.f, "Wave type", " SIN/COS");
+    configParam(MASTER_AMPLITUDE, 1.f, 4.f, 2.f, "Amplitude", " V");
+    configParam(WAVE_TYPE, 0.f, 1.f, 0.f, "Wave delay");
 
     configOutput(FOURIER_OUTPUT, "Output wave");
   }
 
+  void fromJson(json_t *rootJ) override
+  {
+    Module::fromJson(rootJ);
+
+    json_t *frequenciesTextJ = json_object_get(rootJ, "frequenciesText");
+    if (frequenciesTextJ)
+      frequenciesText = json_string_value(frequenciesTextJ);
+
+    json_t *amplitudesTextJ = json_object_get(rootJ, "amplitudesText");
+    if (amplitudesTextJ)
+      amplitudesText = json_string_value(amplitudesTextJ);
+
+    dirtyTextFrequencies = true;
+    dirtyTextAmplitudes = true;
+  }
+
+  json_t *dataToJson() override
+  {
+    json_t *rootJ = json_object();
+    json_object_set_new(rootJ, "frequenciesText", json_stringn(frequenciesText.c_str(), frequenciesText.size()));
+    json_object_set_new(rootJ, "amplitudesText", json_stringn(amplitudesText.c_str(), amplitudesText.size()));
+    return rootJ;
+  }
+
+  void dataFromJson(json_t *rootJ) override
+  {
+    json_t *frequenciesTextJ = json_object_get(rootJ, "frequenciesText");
+    if (frequenciesTextJ)
+      frequenciesText = json_string_value(frequenciesTextJ);
+
+    json_t *amplitudesTextJ = json_object_get(rootJ, "amplitudesText");
+    if (amplitudesTextJ)
+      amplitudesText = json_string_value(amplitudesTextJ);
+
+    dirtyTextFrequencies = true;
+    dirtyTextAmplitudes = true;
+  }
+
   void onReset() override
   {
-    dirty = true;
+    amplitudesText = "";
+    frequenciesText = "";
+
+    amplitudes = {};
+    frequencies = {};
+
+    sum = 0.f;
+    phase = 0.f;
+
+    dirtyTextFrequencies = true;
+    dirtyTextAmplitudes = true;
   }
 
   void process(const ProcessArgs &args) override
   {
-
-    phase += args.sampleTime;
-
+    phase += 100.f * args.sampleTime; // 100Hz stock frequency
     if (phase >= 0.5f)
       phase -= 1.f;
 
     if (params[WAVE_TYPE].getValue() > 0.5f)
-      trig = &std::sin;
-    else
       trig = &std::cos;
+    else
+      trig = &std::sin;
 
-    sum = 0.f;
-    for (int n = 0; n < (int)data.size(); n++)
-    {
-      sum += trig(TWO_PI * phase * data[n]) / (n + 1);
-    }
+    sum = Utils::Waves::fourier(phase, frequencies, amplitudes, trig);
 
-    outputs[FOURIER_OUTPUT].setVoltage(params[AMPLITUDE].getValue() * sum);
+    outputs[FOURIER_OUTPUT].setVoltage(params[MASTER_AMPLITUDE].getValue() * sum);
   }
 };
 
 struct FormulaTextField : LedDisplayTextField
 {
   FourierGenerator *module;
+  char modifiableValues;
 
   void step() override
   {
-    LedDisplayTextField::step();
-    if (module && module->dirty)
-    {
-      setText(module->content);
 
-      module->dirty = false;
+    LedDisplayTextField::step();
+    if (module)
+    {
+      switch (modifiableValues)
+      {
+      case 'A':
+        if (module->dirtyTextAmplitudes)
+        {
+          setText(module->amplitudesText);
+          module->amplitudes = Utils::split(module->amplitudesText, ',');
+          module->dirtyTextAmplitudes = false;
+        }
+        break;
+      case 'F':
+        if (module->dirtyTextFrequencies)
+        {
+          setText(module->frequenciesText);
+          module->frequencies = Utils::split(module->frequenciesText, ',');
+          module->dirtyTextFrequencies = false;
+        }
+        break;
+      }
     }
   }
 
@@ -88,22 +152,33 @@ struct FormulaTextField : LedDisplayTextField
   {
     if (module)
     {
-      module->content = getText();
-      module->data = Utils::split(module->content, ',');
+      switch (modifiableValues)
+      {
+      case 'A':
+        module->frequenciesText = getText();
+        module->frequencies = Utils::split(module->frequenciesText, ',');
+        break;
+      case 'F':
+        module->amplitudesText = getText();
+        module->amplitudes = Utils::split(module->amplitudesText, ',');
+        break;
+      }
     }
   }
 };
 
 struct FormulaDisplay : LedDisplay
 {
-  void setModule(FourierGenerator *module)
+  void setModule(FourierGenerator *module, char modifiableValues)
   {
     FormulaTextField *textField = createWidget<FormulaTextField>(Vec(0, 0));
     textField->box.size = box.size;
-    textField->multiline = true;
+    textField->multiline = false;
     textField->module = module;
+    textField->modifiableValues = modifiableValues;
+    textField->bgColor = nvgRGBA(0x00, 0x00, 0x00, 0x00);
     textField->color = nvgRGB(0x00, 0xff, 0x01);
-    textField->bgColor = nvgRGBA(0x00, 0xff, 0x01, 0x00);
+
     addChild(textField);
   }
 };
@@ -115,20 +190,22 @@ struct FourierGeneratorWidget : ModuleWidget
     setModule(module);
     setPanel(createPanel(asset::plugin(pluginInstance, "res/FourierGenerator.svg")));
 
-    // TextBox
-    FormulaDisplay *formulaDisplay = createWidget<FormulaDisplay>(mm2px(Vec(3.5f, 12)));
-    formulaDisplay->box.size = mm2px(Vec(78, 70));
-    formulaDisplay->setModule(module);
-    addChild(formulaDisplay);
+    // Frequencies textbox (S_i)
+    FormulaDisplay *frequenciesTextbox = createWidget<FormulaDisplay>(mm2px(Vec(18, 12)));
+    frequenciesTextbox->box.size = mm2px(Vec(78, 10));
+    frequenciesTextbox->setModule(module, 'F'); // This textbox instance will modify Frequencies
+    addChild(frequenciesTextbox);
 
-    // Switches
-    addParam(createParam<CKSS>(mm2px(Vec(20, 90)), module, FourierGenerator::WAVE_TYPE));
+    // Amplitudes textbox (L_i)
+    FormulaDisplay *amplitudesTextbox = createWidget<FormulaDisplay>(mm2px(Vec(18, 26)));
+    amplitudesTextbox->box.size = mm2px(Vec(78, 10));
+    amplitudesTextbox->setModule(module, 'A'); // This textbox instance will modify Amplitudes
+    addChild(amplitudesTextbox);
 
-    // Knobs
-    addParam(createParam<RoundBlackKnob>(mm2px(Vec(30, 90)), module, FourierGenerator::AMPLITUDE));
+    addParam(createParam<CKSS>(mm2px(Vec(20, 100)), module, FourierGenerator::WAVE_TYPE));
+    addParam(createParam<RoundBlackKnob>(mm2px(Vec(43, 100)), module, FourierGenerator::MASTER_AMPLITUDE));
 
-    // Output
-    addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(7, 90)), module, FourierGenerator::FOURIER_OUTPUT));
+    addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(110, 90)), module, FourierGenerator::FOURIER_OUTPUT));
   }
 };
 
