@@ -1,8 +1,10 @@
 # Fourier Generator for VCVRack v2
 
-Generate fourier curves based on frequecy, and Amplitude
+Generate fourier curves based on frequency, and Amplitude
 
 ![Demo Screenshot](doc/demo1.png)
+
+### Values
 
 - `S_i` Frequency
 - `L_i` Inverse of Amplitude
