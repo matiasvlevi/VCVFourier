@@ -7,25 +7,26 @@ namespace Utils::Waves
    */
   float fourier(
       float phase,
-      std::vector<float> speeds,
-      std::vector<float> lengths,
+      float &sum,
+      std::vector<float> freq,
+      std::vector<float> amps,
       trigFunc trig)
   {
-    float sum = 0.f;
-    if (speeds.size() == lengths.size())
+    sum = 0.f;
+    if (freq.size() == amps.size())
     {
-      for (short int n = 0; n < (short int)speeds.size(); n++)
-        sum += trig(TWO_PI * phase * speeds[n]) / lengths[n];
+      for (short int n = 0; n < (short int)freq.size(); n++)
+        sum += trig(TWO_PI * phase * freq[n]) / amps[n];
     }
-    else if (speeds.size() > lengths.size())
+    else if (freq.size() > amps.size())
     {
-      for (short int n = 0; n < (short int)speeds.size(); n++)
-        sum += trig(TWO_PI * phase * speeds[n]) / (n + 1);
+      for (short int n = 0; n < (short int)freq.size(); n++)
+        sum += trig(TWO_PI * phase * freq[n]) / (n + 1);
     }
-    else if (speeds.size() < lengths.size())
+    else if (freq.size() < amps.size())
     {
-      for (short int n = 0; n < (short int)lengths.size(); n++)
-        sum += trig(TWO_PI * phase * (n + 1)) / lengths[n];
+      for (short int n = 0; n < (short int)amps.size(); n++)
+        sum += trig(TWO_PI * phase * (n + 1)) / amps[n];
     }
     return sum;
   };

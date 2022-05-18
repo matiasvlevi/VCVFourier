@@ -2,8 +2,8 @@
 
 struct FourierGenerator : Module
 {
-  bool dirtyTextFrequencies = true;
-  bool dirtyTextAmplitudes = true;
+  bool dirtyTextFrequencies = false;
+  bool dirtyTextAmplitudes = false;
 
   float phase = 0.f;
   float sum = 0.f;
@@ -41,7 +41,6 @@ struct FourierGenerator : Module
     config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
     configParam(MASTER_AMPLITUDE, 1.f, 4.f, 2.f, "Amplitude", " V");
     configParam(WAVE_TYPE, 0.f, 1.f, 0.f, "Wave delay");
-
     configOutput(FOURIER_OUTPUT, "Output wave");
   }
 
@@ -49,11 +48,12 @@ struct FourierGenerator : Module
   {
     Module::fromJson(rootJ);
 
-    json_t *frequenciesTextJ = json_object_get(rootJ, "frequenciesText");
+    json_t *frequenciesTextJ = json_object_get(rootJ, "freq");
+    json_t *amplitudesTextJ = json_object_get(rootJ, "amplitudesText");
+
     if (frequenciesTextJ)
       frequenciesText = json_string_value(frequenciesTextJ);
 
-    json_t *amplitudesTextJ = json_object_get(rootJ, "amplitudesText");
     if (amplitudesTextJ)
       amplitudesText = json_string_value(amplitudesTextJ);
 
@@ -64,18 +64,19 @@ struct FourierGenerator : Module
   json_t *dataToJson() override
   {
     json_t *rootJ = json_object();
-    json_object_set_new(rootJ, "frequenciesText", json_stringn(frequenciesText.c_str(), frequenciesText.size()));
+    json_object_set_new(rootJ, "freq", json_stringn(frequenciesText.c_str(), frequenciesText.size()));
     json_object_set_new(rootJ, "amplitudesText", json_stringn(amplitudesText.c_str(), amplitudesText.size()));
     return rootJ;
   }
 
   void dataFromJson(json_t *rootJ) override
   {
-    json_t *frequenciesTextJ = json_object_get(rootJ, "frequenciesText");
+    json_t *frequenciesTextJ = json_object_get(rootJ, "freq");
+    json_t *amplitudesTextJ = json_object_get(rootJ, "amplitudesText");
+
     if (frequenciesTextJ)
       frequenciesText = json_string_value(frequenciesTextJ);
 
-    json_t *amplitudesTextJ = json_object_get(rootJ, "amplitudesText");
     if (amplitudesTextJ)
       amplitudesText = json_string_value(amplitudesTextJ);
 
@@ -88,11 +89,10 @@ struct FourierGenerator : Module
     amplitudesText = "";
     frequenciesText = "";
 
-    amplitudes = {};
-    frequencies = {};
+    amplitudes = {0.f};
+    frequencies = {0.f};
 
     sum = 0.f;
-    phase = 0.f;
 
     dirtyTextFrequencies = true;
     dirtyTextAmplitudes = true;
@@ -109,9 +109,10 @@ struct FourierGenerator : Module
     else
       trig = &std::sin;
 
-    sum = Utils::Waves::fourier(phase, frequencies, amplitudes, trig);
+    sum = Utils::Waves::fourier(phase, sum, frequencies, amplitudes, trig);
 
-    outputs[FOURIER_OUTPUT].setVoltage(params[MASTER_AMPLITUDE].getValue() * sum);
+    outputs[FOURIER_OUTPUT]
+        .setVoltage(params[MASTER_AMPLITUDE].getValue() * sum);
   }
 };
 
@@ -128,20 +129,20 @@ struct FormulaTextField : LedDisplayTextField
     {
       switch (modifiableValues)
       {
-      case 'A':
-        if (module->dirtyTextAmplitudes)
-        {
-          setText(module->amplitudesText);
-          module->amplitudes = Utils::split(module->amplitudesText, ',');
-          module->dirtyTextAmplitudes = false;
-        }
-        break;
       case 'F':
         if (module->dirtyTextFrequencies)
         {
           setText(module->frequenciesText);
           module->frequencies = Utils::split(module->frequenciesText, ',');
           module->dirtyTextFrequencies = false;
+        }
+        break;
+      case 'A':
+        if (module->dirtyTextAmplitudes)
+        {
+          setText(module->amplitudesText);
+          module->amplitudes = Utils::split(module->amplitudesText, ',');
+          module->dirtyTextAmplitudes = false;
         }
         break;
       }
@@ -155,12 +156,12 @@ struct FormulaTextField : LedDisplayTextField
       switch (modifiableValues)
       {
       case 'A':
-        module->frequenciesText = getText();
-        module->frequencies = Utils::split(module->frequenciesText, ',');
-        break;
-      case 'F':
         module->amplitudesText = getText();
         module->amplitudes = Utils::split(module->amplitudesText, ',');
+        break;
+      case 'F':
+        module->frequenciesText = getText();
+        module->frequencies = Utils::split(module->frequenciesText, ',');
         break;
       }
     }

@@ -1,23 +1,21 @@
 {
-  "slug": "VCVFG",
-  "name": "VCVFG",
+  "slug": "FourierGenerator",
+  "name": "FourierGenerator",
   "version": "2.0.0",
-  "license": "MIT",
-  "brand": "vlev",
-  "author": "vlev",
+  "license": "GPLv3+",
+  "brand": "vLev",
+  "author": "vLev",
   "authorEmail": "matiasvlevi@gmail.com",
   "authorUrl": "https://github.com/matiasvlevi",
-  "pluginUrl": "",
-  "manualUrl": "",
-  "sourceUrl": "",
+  "pluginUrl": "https://github.com/matiasvlevi/VCVFourier",
+  "manualUrl": "https://github.com/matiasvlevi/VCVFourier#readme",
+  "sourceUrl": "https://github.com/matiasvlevi/VCVFourier",
   "donateUrl": "",
   "changelogUrl": "",
-  "modules": [
-    {
-      "slug": "FourierGenerator",
-      "name": "FourierGenerator",
-      "description": "Generate complex fourier curves",
-      "tags": []
-    }
-  ]
+  "modules": [{
+    "slug": "FourierGenerator",
+    "name": "FourierGenerator",
+    "description": "Generate complex fourier curves",
+    "tags": []
+  }]
 }

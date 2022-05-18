@@ -13,6 +13,6 @@ namespace Utils
   std::string toText(std::vector<float> data);
   namespace Waves
   {
-    float fourier(float phase, std::vector<float> speeds, std::vector<float> lengths, trigFunc trig);
+    float fourier(float phase, float &sum, std::vector<float> freq, std::vector<float> amps, trigFunc trig);
   }
 }
