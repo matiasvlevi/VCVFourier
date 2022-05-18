@@ -49,7 +49,7 @@ struct FourierGenerator : Module
     Module::fromJson(rootJ);
 
     json_t *frequenciesTextJ = json_object_get(rootJ, "freq");
-    json_t *amplitudesTextJ = json_object_get(rootJ, "amplitudesText");
+    json_t *amplitudesTextJ = json_object_get(rootJ, "amp");
 
     if (frequenciesTextJ)
       frequenciesText = json_string_value(frequenciesTextJ);
@@ -65,14 +65,14 @@ struct FourierGenerator : Module
   {
     json_t *rootJ = json_object();
     json_object_set_new(rootJ, "freq", json_stringn(frequenciesText.c_str(), frequenciesText.size()));
-    json_object_set_new(rootJ, "amplitudesText", json_stringn(amplitudesText.c_str(), amplitudesText.size()));
+    json_object_set_new(rootJ, "amp", json_stringn(amplitudesText.c_str(), amplitudesText.size()));
     return rootJ;
   }
 
   void dataFromJson(json_t *rootJ) override
   {
     json_t *frequenciesTextJ = json_object_get(rootJ, "freq");
-    json_t *amplitudesTextJ = json_object_get(rootJ, "amplitudesText");
+    json_t *amplitudesTextJ = json_object_get(rootJ, "amp");
 
     if (frequenciesTextJ)
       frequenciesText = json_string_value(frequenciesTextJ);
@@ -93,6 +93,7 @@ struct FourierGenerator : Module
     frequencies = {0.f};
 
     sum = 0.f;
+    phase = 0.f;
 
     dirtyTextFrequencies = true;
     dirtyTextAmplitudes = true;
@@ -100,7 +101,7 @@ struct FourierGenerator : Module
 
   void process(const ProcessArgs &args) override
   {
-    phase += 100.f * args.sampleTime; // 100Hz stock frequency
+    phase += 10.f * args.sampleTime; // 100Hz stock frequency
     if (phase >= 0.5f)
       phase -= 1.f;
 

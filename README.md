@@ -12,3 +12,5 @@ Generate fourier curves based on frequency, and Amplitude
 - `h` Master Delay
   > Use `h = pi/2` for the `x` axis <br/>
   > Use `h = 0` for the `y` axis
+
+<br/><br/>
